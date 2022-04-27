@@ -4,6 +4,7 @@
 #include <sstream>         // for stringstream
 #include <stdexcept>       // for exception
 #include <string>          // for string
+#include <vector>          // for vector
 
 #include "ngcore_api.hpp"  // for NGCORE_API
 
@@ -27,6 +28,8 @@ namespace ngcore
   {
     /// a verbal description of the exception
     std::string m_what;
+    /// a list of face ids with errors
+    std::vector<int> errorFacesArray;
   public:
     Exception() = default;
     Exception(const Exception&) = default;
@@ -43,6 +46,8 @@ namespace ngcore
   /// append string to description
     Exception & Append (const char * s) { m_what += s; return *this; }
 
+    void SetErrorFacesArray(std::vector<int> arr) { errorFacesArray = arr; }
+	  const std::vector<int> GetErrorFacesArray() const { return errorFacesArray; }
     /// verbal description of exception
     const std::string & What() const { return m_what; }
 
