@@ -186,7 +186,7 @@ class Ng_Exception
 	std::string m_what;
 	std::vector<int> errorFacesArray;
 public:
-	DLL_HEADER Ng_Exception(const std::string& s);
+	NGLIB_API Ng_Exception(const std::string& s);
 	void SetErrorFacesArray(std::vector<int> arr) { errorFacesArray = arr; }
 	const std::vector<int> GetErrorFacesArray() const { return errorFacesArray; }
 	const std::string & What() const { return m_what; }
