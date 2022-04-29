@@ -57,6 +57,8 @@ namespace netgen
     unique_ptr<INDEX_2_CLOSED_HASHTABLE<int>> segmentht;
     ///
     unique_ptr<INDEX_3_CLOSED_HASHTABLE<int>> surfelementht;
+    //surface-element relationship
+    unique_ptr<INDEX_3_CLOSED_HASHTABLE<int>> elementIdBySurfaceElementIndexHTable;
     unique_ptr<INDEX_3_CLOSED_HASHTABLE<int>> illegal_trigs;
 
     /// faces of rest-solid
@@ -385,6 +387,12 @@ namespace netgen
 
     /// sets internal tables
     DLL_HEADER void CalcSurfacesOfNode ();
+    /// sets internal tables
+	  //Mahesh
+	  DLL_HEADER void CalcSurfacesOfElements();
+
+	  //Mahesh
+	  DLL_HEADER int GetConnectedMeshElementId(SurfaceElementIndex &surfaceElementIndex);
 
     /// additional (temporarily) fix points 
     void FixPoints (const NgBitArray & fixpoints);

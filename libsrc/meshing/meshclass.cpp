@@ -227,6 +227,7 @@ namespace netgen
   {
     boundaryedges = nullptr;
     surfelementht = nullptr; 
+    elementIdBySurfaceElementIndexHTable = nullptr;
     segmentht = nullptr;
 
     lochfunc = {nullptr};
@@ -2189,6 +2190,170 @@ namespace netgen
       }
 
 
+  }
+
+  int Mesh::GetConnectedMeshElementId(SurfaceElementIndex &surfaceElementIndex)
+  {
+	  Element2d sel = SurfaceElement(surfaceElementIndex);
+
+	  INDEX_3 i3;
+	  i3.I1() = sel.PNum(1);
+	  i3.I2() = sel.PNum(2);
+	  i3.I3() = sel.PNum(3);
+	  i3.Sort();
+
+	  return elementIdBySurfaceElementIndexHTable->Get(i3);
+  }
+
+  void Mesh::CalcSurfacesOfElements()
+  {
+	  if (dimension != 3) return;
+
+	  static Timer t("Mesh::CalcSurfacesOfElements"); RegionTimer reg(t);
+	  static Timer tn2se("Mesh::CalcSurfacesOfNode - surf on node");
+	  static Timer tht("Mesh::CalcSurfacesOfElements - elementIdBySurfaceElementIndexHTable");
+
+	  tn2se.Start();
+	  // surfacesonnode.SetSize (GetNP());
+	  int points = GetNP();
+	  bool *isSurfaceNode = new bool[GetNP() + 1];
+	  for (int i = 0; i < points; i++)
+	  {
+		  isSurfaceNode[i] = false;
+	  }
+	  for (const Element2d & sel : surfelements)
+	  {
+		  if (sel.IsDeleted()) continue;
+		  for (PointIndex pi : sel.PNums())
+		  {
+			  isSurfaceNode[pi] = true;
+		  }
+	  }
+
+	  tn2se.Stop();
+
+	  tht.Start();
+	  unique_ptr<INDEX_3_CLOSED_HASHTABLE<bool>> isSurfaceElementTable = make_unique<INDEX_3_CLOSED_HASHTABLE<bool>>(3 * GetNSE() + 1);
+	  for (const auto &sel : surfelements)
+	  {
+		  //const Element2d & sel = surfelements[sei];
+		  if (sel.IsDeleted()) continue;
+
+		  INDEX_3 i3;
+		  i3.I1() = sel.PNum(1);
+		  i3.I2() = sel.PNum(2);
+		  i3.I3() = sel.PNum(3);
+		  i3.Sort();
+		  isSurfaceElementTable->Set(i3, true);   // war das wichtig ???    sel.GetIndex());
+	  }
+
+	  elementIdBySurfaceElementIndexHTable = nullptr;
+	  elementIdBySurfaceElementIndexHTable = make_unique<INDEX_3_CLOSED_HASHTABLE<int>>(3 * GetNSE() + 1);
+	  int nElement = 0;
+	  for (const auto &vel : volelements)
+	  {
+		  nElement++;
+		  int pointsOnSurface = 0;
+		  int indexes[4];
+		  for (PointIndex pi : vel.Vertices())
+		  {
+			  if (isSurfaceNode[pi])
+			  {
+				  indexes[pointsOnSurface] = pi;
+				  pointsOnSurface++;
+			  }
+		  }
+		  if (pointsOnSurface < 3) continue;
+		  switch (pointsOnSurface)
+		  {
+			  case 3:
+			  {
+				  INDEX_3 i3;
+				  for (int i = 0; i < 3; i++)
+				  {
+					  i3[i] = indexes[i];
+				  }
+
+			 
+				  i3.Sort();
+				  elementIdBySurfaceElementIndexHTable->Set(i3, nElement);
+
+				  //char tempOut[500];
+				  //sprintf(tempOut, "nElement\t   %d\t   %d\   %d", i3[1], i3[2], i3[3]);
+				  //PrintMessage(1, tempOut);
+				  break;
+			  }
+
+			  case 4:
+			  {
+				  INDEX_4 i4;
+				  for (int i = 0; i < 4; i++)
+				  {
+					  i4[i] = indexes[i];
+				  }
+				  i4.Sort();
+
+				  INDEX_3 i3;
+				  for (int i = 0; i < 3; i++)
+				  {
+					  i3[i] = i4[i];
+				  }
+
+
+				  //char tempOut[500];
+				  //i3.Sort();
+				  if (isSurfaceElementTable->Position(i3) != -1 && isSurfaceElementTable->Get(i3))
+				  {
+					  elementIdBySurfaceElementIndexHTable->Set(i3, nElement);
+
+					  
+					  //sprintf(tempOut, "nElement    %d    %d\t   %d   %d", nElement, i3[0], i3[1], i3[2]);
+					  //PrintMessage(1, tempOut);
+				  }
+				 
+
+				  //
+				  i3[2] = i4[3];
+				  //i3.Sort();
+				  if (isSurfaceElementTable->Position(i3) != -1 && isSurfaceElementTable->Get(i3))
+				  {
+					  elementIdBySurfaceElementIndexHTable->Set(i3, nElement);
+
+					  //sprintf(tempOut, "nElement    %d    %d\t   %d   %d", nElement, i3[0], i3[1], i3[2]);
+					  //PrintMessage(1, tempOut);
+				  }
+
+				  //
+				  i3[1] = i4[2];
+				  //i3.Sort();
+				  if (isSurfaceElementTable->Position(i3) != -1 && isSurfaceElementTable->Get(i3))
+				  {
+					  elementIdBySurfaceElementIndexHTable->Set(i3, nElement);
+
+					  //sprintf(tempOut, "nElement    %d    %d\t   %d   %d", nElement, i3[0], i3[1], i3[2]);
+					  //PrintMessage(1, tempOut);
+				  }
+
+				  //
+				  i3[0] = i4[1];
+				  //i3.Sort();
+				  if (isSurfaceElementTable->Position(i3) != -1 && isSurfaceElementTable->Get(i3))
+				  {
+					  elementIdBySurfaceElementIndexHTable->Set(i3, nElement);
+
+					  //sprintf(tempOut, "nElement    %d    %d\t   %d   %d", nElement, i3[0], i3[1], i3[2]);
+					  //PrintMessage(1, tempOut);
+				  }
+				  
+
+				  break;
+			  }
+		  }
+		 
+	  }
+
+	  delete[] isSurfaceNode;
+	  tht.Stop();
   }
 
   void Mesh :: CalcSurfacesOfNode ()

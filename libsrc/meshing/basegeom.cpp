@@ -1124,6 +1124,8 @@ namespace netgen
 
     if(dimension == 2)
     {
+        //Mahesh - identify surface element to mesh 3d element connectivity
+	      mesh->CalcSurfacesOfElements();
         FinalizeMesh(*mesh);
         mesh->SetDimension(2);
         return 0;
@@ -1155,6 +1157,9 @@ namespace netgen
 	OptimizeVolume (mparam, *mesh);
 	if (multithread.terminate) return 0;
       }
+
+    //Mahesh - identify surface element to mesh 3d element connectivity
+	  mesh->CalcSurfacesOfElements();
     FinalizeMesh(*mesh);
     return 0;
   }

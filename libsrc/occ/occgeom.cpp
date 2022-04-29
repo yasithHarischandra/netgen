@@ -1533,6 +1533,28 @@ namespace netgen
       return occgeo;
    }
 
+   OCCGeometry *LoadOCC_BREP(TopoDS_Shape &meshingShape)
+   {
+	   OCCGeometry * occgeo;
+	   occgeo = new OCCGeometry;
+
+	   if (meshingShape.IsNull())
+	   {
+		   delete occgeo;
+		   return NULL;
+	   }
+
+	   occgeo->shape = meshingShape;
+
+	   occgeo->changed = 1;
+	   occgeo->BuildFMap();
+
+	   occgeo->CalcBoundingBox();
+	   PrintContents(occgeo);
+
+	   return occgeo;
+   }
+
 
   void OCCGeometry :: Save (const filesystem::path & filename) const
   {

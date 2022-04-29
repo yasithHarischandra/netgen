@@ -284,6 +284,28 @@ namespace netgen
       face_maxh_modified[facenr] = true;
     }
 
+    //Vidura 20.08.2020
+	void SetFaceMaxH(int facenr, double faceh, double maxh)
+	{
+		if ((facenr > 0) && (facenr <= fmap.Extent()))
+		{
+			face_maxh[facenr - 1] = min(maxh, faceh);
+
+			// Philippose - 14/01/2010
+			// If the face maxh is greater than or equal to the 
+			// current global maximum, then identify the face as 
+			// not explicitly controlled by the user any more
+			if (faceh >= maxh)
+			{
+				face_maxh_modified[facenr - 1] = 0;
+			}
+			else
+			{
+				face_maxh_modified[facenr - 1] = 1;
+			}
+		}
+	}
+
     // Philippose - 15/01/2009
     // Returns the local mesh size of a given face
     double GetFaceMaxH(int facenr)
@@ -362,6 +384,7 @@ namespace netgen
   DLL_HEADER OCCGeometry * LoadOCC_IGES (const filesystem::path & filename);
   DLL_HEADER OCCGeometry * LoadOCC_STEP (const filesystem::path & filename);
   DLL_HEADER OCCGeometry * LoadOCC_BREP (const filesystem::path & filename);
+  DLL_HEADER OCCGeometry  *LoadOCC_BREP(TopoDS_Shape &meshingShape);
 
   // Philippose - 31.09.2009
   // External access to the mesh generation functions within the OCC

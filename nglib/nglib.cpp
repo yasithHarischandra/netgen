@@ -331,8 +331,95 @@ namespace nglib
       return et;
    }
 
+   // Return the volume element at a given index "pi"
+   NGLIB_API Ng_Volume_Element_Type
+	   Ng_GetVolumeElement(Ng_Mesh * mesh, int num, int * pi, int &domain)
+   {
+	   const Element & el = ((Mesh*)mesh)->VolumeElement(num);
+	   domain = el.GetIndex();
 
+	   return Ng_GetVolumeElement(mesh, num, pi);
+   }
 
+   //
+   /*****************************************************/
+   //Mahesh
+   NGLIB_API int Ng_GetNumberOfBndFaces(Ng_Mesh * mesh)
+   {
+	   return ((Mesh*)mesh)->GetNFD();
+   }
+
+   NGLIB_API int Ng_GetNumberOfElementFacesInBndFace(Ng_Mesh * mesh, int faceN)
+   {
+	   Array<SurfaceElementIndex> faceSei;
+	   ((Mesh*)mesh)->GetSurfaceElementsOfFace(faceN, faceSei);
+	   return faceSei.Size();
+   }
+   NGLIB_API int Ng_GetElementFaceDataOnBndFace(Ng_Mesh * _mesh, int faceN, int *node1, int *node2, int *node3)
+   {
+	   Mesh *mesh = (Mesh*)_mesh;
+	   Array<SurfaceElementIndex> faceSei;
+	   mesh->GetSurfaceElementsOfFace(faceN, faceSei);
+
+	   for (int i = 0; i < faceSei.Size(); i++)
+	   {
+		   Element2d el = mesh->SurfaceElement(faceSei[i]);
+		   //int n = el.GetNP();
+		  // if (n != 3) abort();
+		   node1[i] = el.PNum(1);
+		   node2[i] = el.PNum(2);
+		   node3[i] = el.PNum(3);
+	   }
+
+	   return 0;
+   }
+   NGLIB_API int Ng_GetElementFaceDataOnBndFace(Ng_Mesh * _mesh, int faceN, std::vector<std::vector<int>> &pointIds, std::vector<int> &elementIdList)
+   {
+	   Mesh *mesh = (Mesh*)_mesh;
+	   Array<SurfaceElementIndex> faceSei;
+	   mesh->GetSurfaceElementsOfFace(faceN, faceSei);
+
+	   for (int i = 0; i < faceSei.Size(); i++)
+	   {
+		   Element2d el = mesh->SurfaceElement(faceSei[i]);
+		   int n = el.GetNP();
+		   // if (n != 3) abort();
+		   for (int j = 0; j < n; j++) {
+			   pointIds[i][j] = el.PNum(j + 1);
+		   }
+
+		   elementIdList[i] = mesh->GetConnectedMeshElementId(faceSei[i]);
+	   }
+
+	   return 0;
+   }
+   NGLIB_API int Ng_GetNumberOfNodesInBndFace(Ng_Mesh * mesh, int bndFace)
+   {
+	   return 0;
+   }
+   NGLIB_API int Ng_GetNodeIdsOfBndFace(Ng_Mesh * mesh, int bndFace, int *nodeIds)
+   {
+	   //Array<SurfaceElementIndex> faceSei;
+	   //((Mesh*)mesh)->GetSurfaceElementsOfFace(bndFace, faceSei);
+
+	   //for (int i = 0; i < faceSei.Size(); i++)
+	   //{
+		  // nodeIds[i] = 
+	   //}
+
+	   return 0;
+   }
+
+   NGLIB_API int Ng_GetElementDomainRelationShip(Ng_Mesh * mesh, int *domain)
+   {
+	   return 0;
+   }
+
+   // Obtain the number of vertices in the mesh
+   NGLIB_API int Ng_GetNV(Ng_Mesh * mesh)
+   {
+	   return ((Mesh*)mesh)->GetNV();
+   }
 
    // Set a global limit on the maximum mesh size allowed
    NGLIB_API void Ng_RestrictMeshSizeGlobal (Ng_Mesh * mesh, double h)
@@ -367,24 +454,37 @@ namespace nglib
    // Generates volume mesh from an existing surface mesh
    NGLIB_API Ng_Result Ng_GenerateVolumeMesh (Ng_Mesh * mesh, Ng_Meshing_Parameters * mp)
    {
-      Mesh * m = (Mesh*)mesh;
+	   try
+	   {
+		  Mesh * m = (Mesh*)mesh;
 
-      // Philippose - 30/08/2009
-      // Do not locally re-define "mparam" here... "mparam" is a global 
-      // object 
-      //MeshingParameters mparam;
-      mp->Transfer_Parameters();
+		  // Philippose - 30/08/2009
+		  // Do not locally re-define "mparam" here... "mparam" is a global 
+		  // object 
+		  //MeshingParameters mparam;
+		  mp->Transfer_Parameters();
 
-      m->CalcLocalH(mparam.grading);
+		  m->CalcLocalH(mparam.grading);
 
-      MeshVolume (mparam, *m);
-      RemoveIllegalElements (*m);
-      OptimizeVolume (mparam, *m);
+		  MeshVolume (mparam, *m);
+		  RemoveIllegalElements (*m);
+		  OptimizeVolume (mparam, *m);
 
-      return NG_OK;
+		  return NG_OK;
+	   }
+	   catch (NgException s)
+	   {
+		   Ng_Exception ng = Ng_Exception(s.What());
+		   throw ng;
+	   }
    }
 
-
+   //Maehesh
+   NGLIB_API void Ng_MakeRelationShipBetweenSrfaceElementsToElements(Ng_Mesh * mesh)
+   {
+	   Mesh * m = (Mesh*)mesh;
+	   m->CalcSurfacesOfElements();
+   }
 
 
    /* ------------------ 2D Meshing Functions ------------------------- */
@@ -837,7 +937,15 @@ namespace nglib
       return ((Ng_OCC_Geometry *)occgeo);
    }
 
+   // Loads geometry from BREP File
+   NGLIB_API Ng_OCC_Geometry * Ng_OCC_Load_BREP(TopoDS_Shape &shape)
+   {
+	   // Call the BREP File Load function. Note.. the geometry class 
+	   // is created and instantiated within the load function
+	   OCCGeometry * occgeo = LoadOCC_BREP(shape);
 
+	   return ((Ng_OCC_Geometry *)occgeo);
+   }
 
 
    // Locally limit the size of the mesh to be generated at various points 
@@ -900,39 +1008,47 @@ namespace nglib
                                                     Ng_Mesh * mesh,
                                                     Ng_Meshing_Parameters * mp)
    {
-      int numpoints = 0;
+	   try {
+		  int numpoints = 0;
 
-      OCCGeometry * occgeom = (OCCGeometry*)geom;
-      Mesh * me = (Mesh*)mesh;
-      me->SetGeometry( shared_ptr<NetgenGeometry>(occgeom, &NOOP_Deleter) );
+		  OCCGeometry * occgeom = (OCCGeometry*)geom;
+		  Mesh * me = (Mesh*)mesh;
+		  me->SetGeometry( shared_ptr<NetgenGeometry>(occgeom, &NOOP_Deleter) );
 
-      // Set the internal meshing parameters structure from the nglib meshing 
-      // parameters structure
-      mp->Transfer_Parameters();
+		  // Set the internal meshing parameters structure from the nglib meshing 
+		  // parameters structure
+		  mp->Transfer_Parameters();
 
-      numpoints = me->GetNP();
+		  numpoints = me->GetNP();
 
-      // Initially set up only for surface meshing without any optimisation
-      int perfstepsend = MESHCONST_MESHSURFACE;
+		  // Initially set up only for surface meshing without any optimisation
+		  int perfstepsend = MESHCONST_MESHSURFACE;
 
-      // Check and if required, enable surface mesh optimisation step
-      if(mp->optsurfmeshenable)
-      {
-         perfstepsend = MESHCONST_OPTSURFACE;
-      }
+		  // Check and if required, enable surface mesh optimisation step
+		  if(mp->optsurfmeshenable)
+		  {
+			 perfstepsend = MESHCONST_OPTSURFACE;
+		  }
 
-      occgeom->MeshSurface(*me, mparam);
-      occgeom->OptimizeSurface(*me, mparam);
+		  occgeom->MeshSurface(*me, mparam);
+		  occgeom->OptimizeSurface(*me, mparam);
 
-      me->CalcSurfacesOfNode();
+		  me->CalcSurfacesOfNode();
       
-      if(me->GetNP() <= numpoints)
-         return NG_ERROR;
+		  if(me->GetNP() <= numpoints)
+			 return NG_ERROR;
 
-      if(me->GetNSE() <= 0)
-         return NG_ERROR;
+		  if(me->GetNSE() <= 0)
+			 return NG_ERROR;
 
-      return NG_OK;
+		  return NG_OK;
+	   }
+	   catch (NgException s)
+	   {
+		   Ng_Exception ng = Ng_Exception(s.What());
+		   ng.SetErrorFacesArray(s.GetErrorFacesArray());
+		   throw ng;
+	   }
    }
 
 
@@ -958,6 +1074,36 @@ namespace nglib
       {
          return NG_ERROR;
       }
+   }
+
+   // Extract the solid map from the OCC geometry
+ // The solid map basically gives an index to each face in the geometry, 
+ // which can be used to access a specific face
+   NGLIB_API Ng_Result Ng_OCC_GetSolidMap(Ng_OCC_Geometry * geom,
+	   Ng_OCC_TopTools_IndexedMapOfShape * SMap)
+   {
+	   OCCGeometry* occgeom = (OCCGeometry*)geom;
+	   TopTools_IndexedMapOfShape *occSolidmap = (TopTools_IndexedMapOfShape *)SMap;
+	   std::vector<int> test;
+	   test.push_back(1);
+	   // Copy the face map from the geometry to the given variable
+	   occSolidmap->Assign(occgeom->somap);
+
+	   if (occSolidmap->Extent())
+	   {
+		   return NG_OK;
+	   }
+	   else
+	   {
+		   return NG_ERROR;
+	   }
+   }
+
+   //Vidura 20.08.2020
+   NGLIB_API void Ng_OCC_SetFaceMeshSize(Ng_OCC_Geometry * geom, int pos, Ng_Meshing_Parameters *mParam, double maxLocalMeshSize)
+   {
+	   OCCGeometry * occgeom = (OCCGeometry*)geom;
+	   occgeom->SetFaceMaxH(pos, maxLocalMeshSize, mParam->maxh);
    }
 
    // ------------------ End - OCC Geometry / Meshing Utility Functions ----------------
@@ -1079,7 +1225,8 @@ namespace nglib
    }
    // ------------------ End - Meshing Parameters related functions --------------------
 
-
+   NGLIB_API Ng_Exception::Ng_Exception(const std::string& s)
+	   : m_what(s) {}
 
 
    // ------------------ Begin - Second Order Mesh generation functions ----------------

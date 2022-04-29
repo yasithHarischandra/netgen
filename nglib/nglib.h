@@ -181,6 +181,16 @@ public:
 };
 
 
+class Ng_Exception
+{
+	std::string m_what;
+	std::vector<int> errorFacesArray;
+public:
+	DLL_HEADER Ng_Exception(const std::string& s);
+	void SetErrorFacesArray(std::vector<int> arr) { errorFacesArray = arr; }
+	const std::vector<int> GetErrorFacesArray() const { return errorFacesArray; }
+	const std::string & What() const { return m_what; }
+};
 
 
 // *** Functions Exported by this Library *************
@@ -474,6 +484,8 @@ NGLIB_API Ng_Result Ng_GenerateVolumeMesh (Ng_Mesh * mesh, Ng_Meshing_Parameters
 
 // ------------------------------------------------------------------
 
+//Mahesh
+NGLIB_API void Ng_MakeRelationShipBetweenSrfaceElementsToElements(Ng_Mesh * mesh);
 
 
 // ------------------------------------------------------------------
@@ -542,8 +554,27 @@ Ng_GetSurfaceElement (Ng_Mesh * mesh, int num, int * pi);
 NGLIB_API Ng_Volume_Element_Type
 Ng_GetVolumeElement (Ng_Mesh * mesh, int num, int * pi);
 
+//Mahesh 
+NGLIB_API Ng_Volume_Element_Type
+Ng_GetVolumeElement(Ng_Mesh * mesh, int num, int * pi, int &domain);
 // ------------------------------------------------------------------
 
+//Adding mahesh
+NGLIB_API int Ng_GetNumberOfBndFaces(Ng_Mesh * mesh);
+NGLIB_API int Ng_GetNumberOfElementFacesInBndFace(Ng_Mesh * mesh, int faceN);
+NGLIB_API int Ng_GetElementFaceDataOnBndFace(Ng_Mesh * mesh, int faceN, int *node1, int *node2, int *node3);
+NGLIB_API int Ng_GetElementFaceDataOnBndFace(Ng_Mesh * mesh, int faceN, std::vector<std::vector<int>> &pointIds, std::vector<int> &elementIdList);
+
+NGLIB_API int Ng_GetNumberOfNodesInBndFace(Ng_Mesh * mesh, int bndFace);
+NGLIB_API int Ng_GetNodeIdsOfBndFace(Ng_Mesh * mesh, int bndFace, int *nodeIds);
+NGLIB_API int Ng_GetElementDomainRelationShip(Ng_Mesh * mesh, int *domain);
+
+
+//Vidura
+NGLIB_API void  Ng_OCC_SetFaceMeshSize(Ng_OCC_Geometry * geom, int pos, Ng_Meshing_Parameters *mParam, double maxLocalMeshSize);
+
+//Yasith 07/09/2020
+NGLIB_API int Ng_GetNV(Ng_Mesh * mesh);
 
 
 
@@ -670,6 +701,8 @@ NGLIB_API Ng_OCC_Geometry * Ng_OCC_Load_IGES (const char * filename);
 
 // Loads geometry from BREP file
 NGLIB_API Ng_OCC_Geometry * Ng_OCC_Load_BREP (const char * filename);
+// Loads geometry from BREP shape
+NGLIB_API Ng_OCC_Geometry * Ng_OCC_Load_BREP(TopoDS_Shape &shape);
 
 // Set the local mesh size based on geometry / topology
 NGLIB_API Ng_Result Ng_OCC_SetLocalMeshSize (Ng_OCC_Geometry * geom,
@@ -690,6 +723,9 @@ NGLIB_API Ng_Result Ng_OCC_GenerateSurfaceMesh (Ng_OCC_Geometry * geom,
 NGLIB_API Ng_Result Ng_OCC_GetFMap(Ng_OCC_Geometry * geom, 
                                     Ng_OCC_TopTools_IndexedMapOfShape * FMap);
 
+// Get the solid map of an already loaded OCC geometry
+NGLIB_API Ng_Result Ng_OCC_GetSolidMap(Ng_OCC_Geometry * geom,
+	Ng_OCC_TopTools_IndexedMapOfShape * SMap);
 #endif // OCCGEOMETRY
 
 
