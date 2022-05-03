@@ -282,7 +282,8 @@ namespace netgen
       delete userdata_double[i];
 
     for (int i = 0; i < bcnames.Size(); i++ )
-      delete bcnames[i];
+      if(bcnames[i])
+		  delete bcnames[i];
 
     for (int i = 0; i < cd2names.Size(); i++)
       delete cd2names[i];
@@ -376,7 +377,11 @@ namespace netgen
     clusters = make_unique<AnisotropicClusters> (*this);
 
     for ( int i = 0; i < bcnames.Size(); i++ )
-      if ( bcnames[i] ) delete bcnames[i];
+		if (bcnames[i])
+		{
+			delete bcnames[i];
+			bcnames[i] = NULL;
+		}
     for (int i= 0; i< cd2names.Size(); i++)
       if (cd2names[i]) delete cd2names[i];
 
