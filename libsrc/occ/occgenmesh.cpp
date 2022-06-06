@@ -632,12 +632,16 @@ namespace netgen
             TopLoc_Location loc;
             Handle(Geom_Surface) surf = BRep_Tool::Surface (face);
             Handle(Poly_Triangulation) triangulation = BRep_Tool::Triangulation (face, loc);
-
-            if (triangulation.IsNull())
+			
+			double linearDeflection = 0.01;
+            while (triangulation.IsNull() && linearDeflection > 1e-6)
               {
                 BRepTools::Clean (geom.shape);
-                BRepMesh_IncrementalMesh (geom.shape, 0.01, true);
+                BRepMesh_IncrementalMesh (geom.shape, linearDeflection, true);
                 triangulation = BRep_Tool::Triangulation (face, loc);
+
+				if (triangulation.IsNull())
+					linearDeflection *= 0.5;
               }
 
             BRepAdaptor_Surface sf(face, Standard_True);
