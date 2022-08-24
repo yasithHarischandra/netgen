@@ -76,6 +76,8 @@ DLL_HEADER void ExportNgOCCBasic(py::module &m)
     .def_property("x", [](gp_Vec&p) { return p.X(); }, [](gp_Vec&p,double x) { p.SetX(x); })
     .def_property("y", [](gp_Vec&p) { return p.Y(); }, [](gp_Vec&p,double y) { p.SetY(y); })
     .def_property("z", [](gp_Vec&p) { return p.Z(); }, [](gp_Vec&p,double z) { p.SetZ(z); })
+    .def("Norm", [](const gp_Vec& v)
+    { return v.Magnitude(); })
     .def("__str__", [] (const gp_Vec & p) {
         stringstream str;
         str << "(" << p.X() << ", " << p.Y() << ", " << p.Z() << ")";
@@ -103,6 +105,14 @@ DLL_HEADER void ExportNgOCCBasic(py::module &m)
            cout << IM(6) << "vec, gt v - " << netgen::occ2ng(v) << ", val = " << val << endl;           
            return DirectionalInterval(v) > val;
          })
+    .def("__le__", [](gp_Vec v, double val)
+        {
+          return DirectionalInterval(v) <= val;
+        })
+    .def("__ge__", [](gp_Vec v, double val)
+        {
+          return DirectionalInterval(v) >= val;
+        })
     ;
 
   py::class_<gp_Dir>(m, "gp_Dir", "3d OCC direction")

@@ -9,7 +9,7 @@
 using namespace netgen;
 namespace netgen
 {
-  //extern shared_ptr<Mesh> mesh;
+  extern shared_ptr<Mesh> mesh;
   extern shared_ptr<NetgenGeometry> ng_geometry;
 }
 
@@ -125,11 +125,12 @@ NGCORE_API_EXPORT void ExportSTL(py::module & m)
 {
   py::class_<STLGeometry,shared_ptr<STLGeometry>, NetgenGeometry> (m,"STLGeometry")
     .def(py::init<>())
-    .def(py::init<>([](const string& filename)
+    .def(py::init<>([](const string& filename, bool surface)
                     {
                       ifstream ist(filename);
-                      return shared_ptr<STLGeometry>(STLGeometry::Load(ist));
-                    }), py::arg("filename"),
+                      return shared_ptr<STLGeometry>(STLGeometry::Load(ist,
+                                                                       surface));
+                    }), py::arg("filename"), py::arg("surface")=false,
       py::call_guard<py::gil_scoped_release>())
     .def(NGSPickle<STLGeometry>())
     .def("_visualizationData", [](shared_ptr<STLGeometry> stl_geo)
@@ -203,12 +204,21 @@ NGCORE_API_EXPORT void ExportSTL(py::module & m)
                            SetGlobalMesh(mesh);
                            auto result = STLMeshingDummy(geo.get(), mesh, mp, stlparam);
                            if(result != 0)
-                             throw Exception("Meshing failed!");
+                             {
+                               netgen::mesh = mesh;
+                               throw Exception("Meshing failed!");
+                             }
 
                            return mesh;
                          }, py::arg("mp") = nullptr,
       py::call_guard<py::gil_scoped_release>(),
          (meshingparameter_description + stlparameter_description).c_str())
+    .def("Draw", FunctionPointer
+         ([] (shared_ptr<STLGeometry> self)
+          {
+             ng_geometry = self;
+          })
+         )
     ;
   m.def("LoadSTLGeometry", [] (const string & filename)
                            {

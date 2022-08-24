@@ -2,7 +2,6 @@
 #define FILE_PARALLEL
 
 
-
 #ifdef VTRACE
 #include "vt_user.h"
 #else
@@ -39,11 +38,11 @@ namespace netgen
 #endif
 
   
-#ifdef PARALLEL
   enum { MPI_TAG_CMD = 110 };
   enum { MPI_TAG_MESH = 210 };
   enum { MPI_TAG_VIS = 310 };
 
+#ifdef PARALLEL
 
   [[deprecated("mympi_send int, use comm.Send instead")]]            
   inline void MyMPI_Send (int i, int dest, int tag, MPI_Comm comm)
@@ -253,7 +252,7 @@ namespace netgen
 
   
   [[deprecated("do we still send commands?")]]                      
-  extern void MyMPI_SendCmd (const char * cmd);
+  DLL_HEADER void MyMPI_SendCmd (const char * cmd);
   [[deprecated("do we still send commands?")]]                        
   extern string MyMPI_RecvCmd ();
 
@@ -270,7 +269,8 @@ namespace netgen
   inline void MyMPI_Bcast (NgArray<T, 0> & s, NgMPI_Comm comm)
   {
     int size = s.Size();
-    MyMPI_Bcast (size, comm);
+    // MyMPI_Bcast (size, comm);
+    comm.Bcast(size);
     // if (MyMPI_GetId(comm) != 0) s.SetSize (size);
     if (comm.Rank() != 0) s.SetSize (size);
     MPI_Bcast (&s[0], size, GetMPIType<T>(), 0, comm);
@@ -305,6 +305,22 @@ namespace netgen
   }
 
 
+#else
+  template <typename T>
+  [[deprecated("do we need that ? ")]]       
+  inline void MyMPI_ExchangeTable (TABLE<T> & send_data, 
+				   TABLE<T> & recv_data, int tag,
+				   const NgMPI_Comm & comm)
+  {
+    ;
+  }
+
+  template <typename T>
+  [[deprecated("do we need that ? ")]]       
+  inline void MyMPI_ExchangeTable (DynamicTable<T> & send_data, 
+				   DynamicTable<T> & recv_data, int tag,
+				   const NgMPI_Comm & comm)
+  { ; } 
 #endif // PARALLEL
 
 }

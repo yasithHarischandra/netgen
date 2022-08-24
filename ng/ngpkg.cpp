@@ -124,39 +124,6 @@ namespace netgen
 
 
 
-#ifndef SMALLLIB
-//  // Destination for messages, errors, ...
-#ifndef WIN32
-  DLL_HEADER void Ng_PrintDest(const char * s)
-  {
-    /*
-#ifdef PARALLEL
-    int id, ntasks;
-    MPI_Comm_size(MPI_COMM_WORLD, &ntasks);
-    MPI_Comm_rank(MPI_COMM_WORLD, &id);
-#else
-    int id = 0; int ntasks = 1;
-#endif
-    */
-
-    if (id == 0)
-      (*mycout) << s << flush;
-
-    /*
-    if ( ntasks == 1 )
-      (*mycout) << s << flush;
-    else
-      (*mycout) << "p" << id << ": " << s << flush ;
-    */
-  }
-#endif
-  void MyError2(const char * ch)
-  {
-    cout << ch;
-    (*testout) << "Error !!! " << ch << endl << flush;
-  }
-#endif
-
   static clock_t starttimea;
   void ResetTime2 ()
   {
@@ -220,7 +187,7 @@ namespace netgen
 	mesh -> Load(filename);
         SetGlobalMesh (mesh);
 
-#ifdef PARALLEL
+#ifdef PARALLEL_NETGEN
 	MyMPI_SendCmd ("mesh");
 	mesh -> Distribute();
 #endif

@@ -26,6 +26,7 @@ using namespace netgen;
 namespace netgen
 {
   extern std::shared_ptr<NetgenGeometry> ng_geometry;
+  extern std::shared_ptr<Mesh> mesh;
 }
 
 static string occparameter_description = R"delimiter(
@@ -117,11 +118,11 @@ DLL_HEADER void ExportNgOCC(py::module &m)
                     
                     for (auto & s : shapes)
                       for (TopExp_Explorer e(s, TopAbs_SOLID); e.More(); e.Next())
-                        if (auto name = OCCGeometry::global_shape_properties[e.Current().TShape()].name)
+                        if (auto name = OCCGeometry::global_shape_properties[e.Current()].name)
                           {
                             TopTools_ListOfShape modlist = history->Modified(e.Current());
                             for (auto mods : modlist)
-                              OCCGeometry::global_shape_properties[mods.TShape()].name = *name;
+                              OCCGeometry::global_shape_properties[mods].name = *name;
                           }
 #endif // OCC_HAVE_HISTORY
 
@@ -272,7 +273,10 @@ DLL_HEADER void ExportNgOCC(py::module &m)
                                SetGlobalMesh(mesh);
                                auto result = geo->GenerateMesh(mesh, mp);
                                if(result != 0)
-                                 throw Exception("Meshing failed!");
+                                 {
+                                   netgen::mesh = mesh;   // keep mesh for debugging
+                                   throw Exception("Meshing failed!");
+                                 }
                                ng_geometry = geo;
                                if (comm.Size() > 1)
                                  mesh->Distribute();
@@ -319,8 +323,6 @@ DLL_HEADER void ExportNgOCC(py::module &m)
       Handle(XCAFDoc_MaterialTool) material_tool = XCAFDoc_DocumentTool::MaterialTool(doc->Main());
       // Handle(XCAFDoc_VisMaterialTool) vismaterial_tool = XCAFDoc_DocumentTool::VisMaterialTool(doc->Main());
 
-      cout << "handle(shape) = " << *(void**)(void*)(&(shape.TShape())) << endl;
-      
       // TDF_LabelSequence doc_shapes;
       // shape_tool->GetShapes(doc_shapes);
       // cout << "shape tool nbentities: " << doc_shapes.Size() << endl;

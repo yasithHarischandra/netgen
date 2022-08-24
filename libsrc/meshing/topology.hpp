@@ -80,7 +80,7 @@ public:
   static inline short int GetNEdges (ELEMENT_TYPE et);
   static inline short int GetNFaces (ELEMENT_TYPE et);
 
-  static const Point3d * GetVertices (ELEMENT_TYPE et);
+  DLL_HEADER static const Point3d * GetVertices (ELEMENT_TYPE et);
   inline static const ELEMENT_EDGE * GetEdges1 (ELEMENT_TYPE et);
   inline static const ELEMENT_EDGE * GetEdges0 (ELEMENT_TYPE et);
   inline static FlatArray<ELEMENT_EDGE> GetEdges (ELEMENT_TYPE et);
@@ -93,12 +93,14 @@ public:
   int GetEdge (SegmentIndex segnr) const { return segedges[segnr]; }
 
   [[deprecated("use GetEdge(SegmentIndex) instead")]]                      
-  void GetSegmentEdge (int segnr, int & enr, int & orient) const
+  void GetSegmentEdge (int segnr, int & enr, int & orient) const;
+  /*
   {
     enr = segedges.Get(segnr)+1;
     // orient = segedges.Get(segnr).orient;
     orient = GetSegmentEdgeOrientation(segnr);
-  }
+    }
+  */
 
   [[deprecated("use GetEdges (ElementIndex) -> FlatArray")]]                          
   void GetElementEdges (int elnr, NgArray<int> & edges) const;
@@ -133,14 +135,14 @@ public:
   int GetSegmentEdgeOrientation (int elnr) const; // old style
   
   
-  void GetFaceVertices (int fnr, NgArray<int> & vertices) const;
-  void GetFaceVertices (int fnr, int * vertices) const;
-  void GetEdgeVertices (int enr, int & v1, int & v2) const;
-  void GetEdgeVertices (int enr, PointIndex & v1, PointIndex & v2) const;
+  DLL_HEADER void GetFaceVertices (int fnr, NgArray<int> & vertices) const;
+  DLL_HEADER void GetFaceVertices (int fnr, int * vertices) const;
+  DLL_HEADER void GetEdgeVertices (int enr, int & v1, int & v2) const;
+  DLL_HEADER void GetEdgeVertices (int enr, PointIndex & v1, PointIndex & v2) const;
   auto GetEdgeVertices (int enr) const { return tuple(edge2vert[enr][0], edge2vert[enr][1]); }
   auto GetEdgeVerticesPtr (int enr) const { return &edge2vert[enr][0]; }
   auto GetFaceVerticesPtr (int fnr) const { return &face2vert[fnr][0]; }
-  void GetFaceEdges (int fnr, NgArray<int> & edges, bool withorientation = false) const;
+  DLL_HEADER void GetFaceEdges (int fnr, NgArray<int> & edges, bool withorientation = false) const;
 
   ELEMENT_TYPE GetFaceType (int fnr) const
   // { return (face2vert.Get(fnr)[3] == 0) ? TRIG : QUAD; }

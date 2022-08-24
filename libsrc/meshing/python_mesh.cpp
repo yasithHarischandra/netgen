@@ -606,7 +606,34 @@ DLL_HEADER void ExportNetgenMeshing(py::module &m)
                   [](FaceDescriptor & self) -> string { return self.GetBCName(); },
                   [](FaceDescriptor & self, string name) { self.SetBCName(new string(name)); } // memleak
                   )
-    .def_property("color", &FaceDescriptor::SurfColour, &FaceDescriptor::SetSurfColour )
+    .def_property("color",
+                  [](const FaceDescriptor& self)
+                  {
+                    auto sc = self.SurfColour();
+                    return py::make_tuple(sc[0], sc[1], sc[2]);
+                  },
+                  [](FaceDescriptor& self, py::tuple col)
+                  {
+                    Vec<4> sc = 1;
+                    sc[0] = py::cast<double>(col[0]);
+                    sc[1] = py::cast<double>(col[1]);
+                    sc[2] = py::cast<double>(col[2]);
+                    if(py::len(col) > 3)
+                      sc[3] = py::cast<double>(col[3]);
+                    self.SetSurfColour(sc);
+                  }
+                  )
+    .def_property("transparency",
+                  [](const FaceDescriptor& self)
+                  {
+                    return self.SurfColour()[3];
+                  },
+                  [](FaceDescriptor& self, double val)
+                  {
+                    auto sc = self.SurfColour();
+                    sc[3] = val;
+                    self.SetSurfColour(sc);
+                  })
     ;
 
   
@@ -1169,14 +1196,16 @@ DLL_HEADER void ExportNetgenMeshing(py::module &m)
                               string material,
                               variant<string, int> domain, bool outside,
                               optional<string> project_boundaries,
-                              bool grow_edges)
+                              bool grow_edges, bool limit_growth_vectors)
            {
              BoundaryLayerParameters blp;
+             BitArray boundaries(self.GetNFD()+1);
+             boundaries.Clear();
              if(int* bc = get_if<int>(&boundary); bc)
                {
                  for (int i = 1; i <= self.GetNFD(); i++)
                    if(self.GetFaceDescriptor(i).BCProperty() == *bc)
-                     blp.surfid.Append (i);
+                     boundaries.SetBit(i);
                }
              else
                {
@@ -1186,19 +1215,29 @@ DLL_HEADER void ExportNetgenMeshing(py::module &m)
                      auto& fd = self.GetFaceDescriptor(i);
                      if(regex_match(fd.GetBCName(), pattern))
                        {
+                         boundaries.SetBit(i);
                          auto dom_pattern = get_if<string>(&domain);
                          // only add if adjacent to domain
                          if(dom_pattern)
                            {
                              regex pattern(*dom_pattern);
-                             if((fd.DomainIn() > 0 && regex_match(self.GetMaterial(fd.DomainIn()), pattern)) || (fd.DomainOut() > 0 && regex_match(self.GetMaterial(fd.DomainOut()), pattern)))
-                               blp.surfid.Append(i);
+                             bool mat1_match = fd.DomainIn() > 0 && regex_match(self.GetMaterial(fd.DomainIn()), pattern);
+                             bool mat2_match = fd.DomainOut() > 0 && regex_match(self.GetMaterial(fd.DomainOut()), pattern);
+                             // if boundary is inner or outer remove from list
+                             if(mat1_match == mat2_match)
+                               boundaries.Clear(i);
+                             // if((fd.DomainIn() > 0 && regex_match(self.GetMaterial(fd.DomainIn()), pattern)) || (fd.DomainOut() > 0 && regex_match(self.GetMaterial(fd.DomainOut()), pattern)))
+                             // boundaries.Clear(i);
+                             // blp.surfid.Append(i);
                            }
-                         else
-                           blp.surfid.Append(i);
+                         // else
+                         //   blp.surfid.Append(i);
                        }
                      }
                }
+             for(int i = 1; i<=self.GetNFD(); i++)
+               if(boundaries.Test(i))
+                 blp.surfid.Append(i);
              blp.new_mat = material;
 
              if(project_boundaries.has_value())
@@ -1238,12 +1277,13 @@ DLL_HEADER void ExportNetgenMeshing(py::module &m)
 
              blp.outside = outside;
              blp.grow_edges = grow_edges;
+             blp.limit_growth_vectors = limit_growth_vectors;
 
              GenerateBoundaryLayer (self, blp);
              self.UpdateTopology();
            }, py::arg("boundary"), py::arg("thickness"), py::arg("material"),
           py::arg("domains") = ".*", py::arg("outside") = false,
-          py::arg("project_boundaries")=nullopt, py::arg("grow_edges")=true,
+          py::arg("project_boundaries")=nullopt, py::arg("grow_edges")=true, py::arg("limit_growth_vectors") = true,
           R"delimiter(
 Add boundary layer to mesh.
 
@@ -1538,6 +1578,32 @@ project_boundaries : Optional[str] = None
       .def(py::init<>())
       ;
     m.def("SetParallelPickling", [](bool par) { parallel_pickling = par; });
+    m.def ("_Redraw",
+        ([](bool blocking, double fr)
+          {
+            static auto last_time = std::chrono::system_clock::now()-std::chrono::seconds(10);
+            auto now = std::chrono::system_clock::now();
+            double elapsed = std::chrono::duration<double>(now-last_time).count();
+            if (blocking || elapsed * fr > 1)
+              {
+                Ng_Redraw(blocking);
+                last_time = std::chrono::system_clock::now();
+                return true;
+              }
+            return false;
+          }),
+        py::arg("blocking")=false, py::arg("fr") = 25, R"raw_string(
+  Redraw all
+
+  Parameters:
+
+  blocking : bool
+    input blocking
+
+  fr : double
+    input framerate
+
+  )raw_string");
 }
 
 PYBIND11_MODULE(libmesh, m) {
