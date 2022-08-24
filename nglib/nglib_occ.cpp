@@ -2,7 +2,7 @@
 #include <myadt.hpp>
 #include <occgeom.hpp>
 
-#define OCCGEOMETRY 1
+
 namespace nglib {
 #include "nglib.h"
 }
