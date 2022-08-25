@@ -75,11 +75,12 @@ namespace nglib
    }
 
       // Loads geometry from BREP File
-   NGLIB_API Ng_OCC_Geometry * Ng_OCC_Load_BREP(TopoDS_Shape &shape)
+   NGLIB_API Ng_OCC_Geometry * Ng_OCC_Load_BREP(Ng_TopoDS_Shape *shape)
    {
 	   // Call the BREP File Load function. Note.. the geometry class 
 	   // is created and instantiated within the load function
-	   OCCGeometry * occgeo = LoadOCC_BREP(shape);
+	   TopoDS_Shape *occ_shape = (TopoDS_Shape*)shape;
+	   OCCGeometry * occgeo = LoadOCC_BREP(*occ_shape);
 
 	   return ((Ng_OCC_Geometry *)occgeo);
    }

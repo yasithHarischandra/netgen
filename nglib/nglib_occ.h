@@ -5,6 +5,7 @@
 /// Data type for NETGEN OpenCascade geometry
 typedef void * Ng_OCC_Geometry;
 typedef void * Ng_OCC_TopTools_IndexedMapOfShape;
+typedef void * Ng_TopoDS_Shape;
 
 // **********************************************************
 // **   OpenCascade Geometry / Meshing Utilities           **
@@ -27,7 +28,7 @@ NGLIB_API Ng_OCC_Geometry * Ng_OCC_Load_BREP (const char * filename);
 
 ///////yasith
 // Loads geometry from BREP shape
-//NGLIB_API Ng_OCC_Geometry * Ng_OCC_Load_BREP(TopoDS_Shape &shape);
+NGLIB_API Ng_OCC_Geometry * Ng_OCC_Load_BREP(Ng_TopoDS_Shape *shape);
 // Get the solid map of an already loaded OCC geometry
 NGLIB_API Ng_Result Ng_OCC_GetSolidMap(Ng_OCC_Geometry * geom,
 	Ng_OCC_TopTools_IndexedMapOfShape * SMap);
