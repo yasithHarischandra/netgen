@@ -323,7 +323,95 @@ namespace nglib
       return et;
    }
 
+   // Return the volume element at a given index "pi"
+   NGLIB_API Ng_Volume_Element_Type
+	   Ng_GetVolumeElement(Ng_Mesh * mesh, int num, int * pi, int &domain)
+   {
+	   const Element & el = ((Mesh*)mesh)->VolumeElement(num);
+	   domain = el.GetIndex();
 
+	   return Ng_GetVolumeElement(mesh, num, pi);
+   }
+
+   //
+   /*****************************************************/
+   //Mahesh
+   NGLIB_API int Ng_GetNumberOfBndFaces(Ng_Mesh * mesh)
+   {
+	   return ((Mesh*)mesh)->GetNFD();
+   }
+
+   NGLIB_API int Ng_GetNumberOfElementFacesInBndFace(Ng_Mesh * mesh, int faceN)
+   {
+	   Array<SurfaceElementIndex> faceSei;
+	   ((Mesh*)mesh)->GetSurfaceElementsOfFace(faceN, faceSei);
+	   return faceSei.Size();
+   }
+   NGLIB_API int Ng_GetElementFaceDataOnBndFace(Ng_Mesh * _mesh, int faceN, int *node1, int *node2, int *node3)
+   {
+	   Mesh *mesh = (Mesh*)_mesh;
+	   Array<SurfaceElementIndex> faceSei;
+	   mesh->GetSurfaceElementsOfFace(faceN, faceSei);
+
+	   for (int i = 0; i < faceSei.Size(); i++)
+	   {
+		   Element2d el = mesh->SurfaceElement(faceSei[i]);
+		   //int n = el.GetNP();
+		  // if (n != 3) abort();
+		   node1[i] = el.PNum(1);
+		   node2[i] = el.PNum(2);
+		   node3[i] = el.PNum(3);
+	   }
+
+	   return 0;
+   }
+   NGLIB_API int Ng_GetElementFaceDataOnBndFace(Ng_Mesh * _mesh, int faceN, std::vector<std::vector<int>> &pointIds, std::vector<int> &elementIdList)
+   {
+	   Mesh *mesh = (Mesh*)_mesh;
+	   Array<SurfaceElementIndex> faceSei;
+	   mesh->GetSurfaceElementsOfFace(faceN, faceSei);
+
+	   for (int i = 0; i < faceSei.Size(); i++)
+	   {
+		   Element2d el = mesh->SurfaceElement(faceSei[i]);
+		   int n = el.GetNP();
+		   // if (n != 3) abort();
+		   for (int j = 0; j < n; j++) {
+			   pointIds[i][j] = el.PNum(j + 1);
+		   }
+
+		   elementIdList[i] = mesh->GetConnectedMeshElementId(faceSei[i]);
+	   }
+
+	   return 0;
+   }
+   NGLIB_API int Ng_GetNumberOfNodesInBndFace(Ng_Mesh * mesh, int bndFace)
+   {
+	   return 0;
+   }
+   NGLIB_API int Ng_GetNodeIdsOfBndFace(Ng_Mesh * mesh, int bndFace, int *nodeIds)
+   {
+	   //Array<SurfaceElementIndex> faceSei;
+	   //((Mesh*)mesh)->GetSurfaceElementsOfFace(bndFace, faceSei);
+
+	   //for (int i = 0; i < faceSei.Size(); i++)
+	   //{
+		  // nodeIds[i] = 
+	   //}
+
+	   return 0;
+   }
+
+   NGLIB_API int Ng_GetElementDomainRelationShip(Ng_Mesh * mesh, int *domain)
+   {
+	   return 0;
+   }
+
+   // Obtain the number of vertices in the mesh
+   NGLIB_API int Ng_GetNV(Ng_Mesh * mesh)
+   {
+	   return ((Mesh*)mesh)->GetNV();
+   }
 
 
    // Set a global limit on the maximum mesh size allowed
